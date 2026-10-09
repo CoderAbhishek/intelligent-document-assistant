@@ -178,3 +178,15 @@ def test_extraction_failure_on_a_page_raises_extraction_error(make_pdf, monkeypa
 
     assert isinstance(excinfo.value.__cause__, RuntimeError)
     assert "page one" not in str(excinfo.value)
+
+
+def test_failed_load_does_not_keep_the_file_locked(tmp_path):
+    # On Windows an open handle blocks deletion; callers delete uploads right after a failure.
+    path = tmp_path / "broken.pdf"
+    path.write_bytes(b"this is not a pdf")
+
+    with pytest.raises(PDFFileError) as excinfo:
+        load_pdf(path)
+
+    path.unlink()
+    assert excinfo.value is not None

@@ -12,6 +12,7 @@ dependencies = [
     "llama-index-core>=0.14.25",
     "llama-index-embeddings-huggingface>=0.8.0",
     "pymupdf>=1.28.2",
+    "streamlit>=1.65.0",
 ]
 
 [project.scripts]

@@ -1,0 +1,4 @@
+[server]
+# The file watcher probes every loaded module, which makes transformers' lazy imports
+# log hundreds of torchvision tracebacks. Restart the app after editing the code.
+fileWatcherType = "none"

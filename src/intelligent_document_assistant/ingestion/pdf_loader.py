@@ -84,7 +84,8 @@ def _extract_pages(pdf: pymupdf.Document, file_name: str) -> list[str]:
 
 def _open_pdf(path: Path) -> pymupdf.Document:
     try:
-        pdf = pymupdf.open(path)
+        # Opening from bytes avoids a file handle that a failed open would leave locked on Windows.
+        pdf = pymupdf.open(stream=path.read_bytes(), filetype="pdf")
     except (RuntimeError, OSError) as exc:  # PyMuPDF errors subclass RuntimeError
         raise PDFFileError(f"File is not a valid PDF or cannot be read: {path.name}") from exc
 

@@ -2,7 +2,7 @@
 
 A document question-answering application built on retrieval-augmented generation (RAG). The goal: upload a PDF, ask questions in natural language, and receive answers grounded in the passages retrieved from that document.
 
-> **Project status: work in progress.** PDF ingestion, semantic retrieval, and grounded answer generation are implemented and tested as a Python library. The web interface is planned and is **not yet available**. See [Key capabilities](#key-capabilities).
+> **Project status: work in progress.** PDF ingestion, semantic retrieval, grounded answer generation, and a Streamlit web interface are implemented and tested, and run locally. The application has **not been deployed**. See [Key capabilities](#key-capabilities).
 
 ## Problem statement
 
@@ -18,7 +18,7 @@ Finding a specific answer in a long PDF means skimming or keyword searching, whi
 | Semantic retrieval of ranked passages with page references | Implemented |
 | Grounded answer generation (LangChain + Groq) with cited passages | Implemented |
 | Explicit "not enough evidence" responses | Implemented (prompt-based, see [Limitations](#limitations)) |
-| Streamlit user interface | Planned |
+| Streamlit interface: upload one PDF, ask questions, view answers and sources | Implemented |
 | Deployment | Planned |
 
 The first version targets a single, text-based PDF at a time.
@@ -31,7 +31,7 @@ PDF -> validation + text extraction -> one Document per page -> chunks (nodes)
     -> context formatting -> prompt + chat model -> parsed answer with cited passages
 ```
 
-All stages shown are implemented; the Streamlit interface that will sit on top is planned.
+All stages shown are implemented and are driven by the Streamlit interface.
 
 Each page is chunked on its own, so a chunk never spans two pages and its page number is exact. A fact that straddles a page break is therefore split across two chunks.
 
@@ -44,7 +44,7 @@ Each page is chunked on its own, so a chunk never spans two pages and its page n
 | [Sentence-transformers](https://www.sbert.net/) model `BAAI/bge-small-en-v1.5` | Local text embeddings (384 dimensions), no API key | In use |
 | [LangChain](https://python.langchain.com/) (`langchain-core`, `langchain-groq`) | Prompt template, chat-model call, output parsing | In use |
 | [Groq](https://groq.com/) chat model (default `openai/gpt-oss-20b`) | Writes the answer from the supplied passages | In use, requires an API key |
-| [Streamlit](https://streamlit.io/) | Web interface | Planned |
+| [Streamlit](https://streamlit.io/) | Web interface: upload, question input, answer and source display, per-session state | In use |
 | Python library (`answer_question`) | Connects retrieval and generation | In use |
 
 The index lives in memory and no remote vector database is used.
@@ -56,6 +56,7 @@ src/intelligent_document_assistant/
     ingestion/    # PDF validation and text extraction
     retrieval/    # chunking, embeddings and indexing, retrieval
     generation/   # evidence formatting, prompt, chat model, answer parsing
+    app/          # Streamlit interface and upload handling
 tests/
 ```
 
@@ -86,17 +87,30 @@ Copy-Item .env.example .env
 | `GROQ_API_KEY` | Required for answer generation |
 | `GROQ_MODEL` | Optional; defaults to `openai/gpt-oss-20b` |
 
-The library reads these from the process environment and does not load `.env` itself. To run a script with the file applied:
+The application reads these from the process environment and does not load `.env` itself; `uv run --env-file .env ...` applies the file for a single command. For a hosted deployment, supply the variables through the platform's environment or secrets configuration instead of a file.
 
-```powershell
-uv run --env-file .env python your_script.py
-```
-
-Ingestion and retrieval need no key.
+Ingestion, indexing, and retrieval need no key. Without `GROQ_API_KEY` the app still indexes a PDF, and asking a question shows a setup message.
 
 ## Usage
 
-There is no user interface yet. The components can be used from Python:
+### Web app
+
+```powershell
+uv run --env-file .env streamlit run src/intelligent_document_assistant/app/streamlit_app.py --server.address localhost
+```
+
+Open the printed local URL, then:
+
+1. Upload a text-based PDF. The first upload in a server process also loads the embedding model, which takes some time (and downloads it on the very first run).
+2. Ask a question. The answer is shown with the passages the model cited, each labelled with the uploaded file name and page number. Other retrieved passages are listed separately and labelled as not cited.
+3. If the document does not answer the question, the app shows a "Not enough information in the document" notice instead of an answer.
+4. Upload a different PDF, or use **Start over**, to replace the document. The previous index, answer, and sources are discarded.
+
+The index is built once per upload and kept in the browser session's state, so further questions about the same PDF do not re-index it. File watching is disabled in `.streamlit/config.toml`, so restart the app after editing code.
+
+### Python library
+
+The components can also be used from Python:
 
 ```python
 from intelligent_document_assistant.ingestion import load_pdf
@@ -164,7 +178,7 @@ Errors derive from `GenerationError`: `MissingCredentialsError`, `ModelCallError
 uv run pytest
 ```
 
-This runs the fast offline tests. They generate their own small PDFs and use a deterministic stand-in embedding and a stub chat model, so they need no network access, model download, or API key.
+This runs the fast offline tests, including the Streamlit interface tests (run with Streamlit's `AppTest` against the real app script). They generate their own small PDFs and use a deterministic stand-in embedding and a stub chat model, so they need no network access, model download, or API key.
 
 ```powershell
 uv run pytest -m integration
@@ -189,21 +203,25 @@ The live tests send small fictional test passages to Groq.
 - "Not enough evidence" is decided by the language model following the prompt, not by a retrieval-score threshold, because similarity scores are not calibrated probabilities. Prompt instructions reduce but do not eliminate unsupported answers or susceptibility to instructions hidden in a document, and the abstention behaviour has been checked on only a few questions.
 - Answers are only as good as retrieval: if the right passage is not among the top-k, the model cannot use it.
 - Each question is answered independently; there is no conversation memory.
-- The index is in memory and is rebuilt for each document; there is no persistence.
-- Only one document at a time is in scope.
+- The index is in memory and belongs to the browser session: refreshing the page or starting over discards it and the PDF must be uploaded again. There is no persistence.
+- Only one document per session is supported. Uploads are subject to Streamlit's default 200 MB limit, and large PDFs take proportionally longer to index.
+- The embedding model is shared by all sessions of a server process. Concurrent multi-user use has not been load-tested.
 
 ## Security and document handling
 
 - Secrets go in a local `.env` file, which is git-ignored. Never commit real keys.
 - `*.pdf` is git-ignored to avoid committing private documents; test PDFs are generated in code.
 - Ingestion and indexing process documents in memory and run locally. Document text is not logged. Network access is limited to the one-time embedding model download and, for answer generation, the Groq API call.
-- Error messages contain the file name only, never its directory or its contents.
+- An uploaded PDF is written to a private temporary directory only while it is read, then deleted. The uploaded file name is shown for provenance but is never used as a filesystem path.
+- Error messages never contain the document's text, its location on disk, or credentials. Unexpected errors are written to the server log, not to the page.
+- Answers and passages are displayed as plain text, so markup produced by the model (for example a remote image link) is not rendered.
+- The run command above binds the app to `localhost` so it is not exposed on your network.
 - Answer generation sends the question and the retrieved passages to the Groq API. Do not use documents you are not permitted to share with that provider. Ingestion, indexing, and retrieval stay local.
 - The API key is read from the environment, is never logged, and is not included in error messages.
 
 ## Future improvements
 
-- Streamlit interface and deployment.
+- A hosted deployment.
 - Retrieval-quality evaluation on realistic documents, and tuning of chunking and `top_k`.
 - Possible later extensions: OCR for scanned documents, multiple documents, and advanced retrieval techniques.
 
