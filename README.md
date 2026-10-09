@@ -57,6 +57,8 @@ src/intelligent_document_assistant/
     retrieval/    # chunking, embeddings and indexing, retrieval
     generation/   # evidence formatting, prompt, chat model, answer parsing
     app/          # Streamlit interface and upload handling
+evaluation/       # labelled dataset, synthetic corpus, metrics (not part of the package)
+notebooks/        # evaluation notebook
 tests/
 ```
 
@@ -192,13 +194,40 @@ uv run --env-file .env pytest -m integration
 
 The live tests send small fictional test passages to Groq.
 
+## Evaluation
+
+`notebooks/evaluation.ipynb` measures the pipeline on a labelled dataset, scoring retrieval, answers, citations, and abstention separately. It calls the production functions; `evaluation/` only adds the dataset, the metrics, and the loops.
+
+```powershell
+# retrieval only: local, no API calls (the embedding model is downloaded on first use)
+uv run --group notebook jupyter execute notebooks/evaluation.ipynb --output executed.ipynb
+# adds live generation: sends the questions and retrieved passages to Groq
+$env:EVAL_RUN_LIVE = "1"; uv run --env-file .env --group notebook jupyter execute notebooks/evaluation.ipynb --output executed.ipynb
+```
+
+The executed copy is saved as the git-ignored `notebooks/executed.ipynb` and raw results as `evaluation/results/latest.json`; the committed notebook has no outputs.
+
+**Dataset.** 27 questions (18 answerable, 9 not) about a synthetic 10-page report on a fictional company, covering direct, paraphrased, multi-page, explicit-negative ("the company does not publish guidance"), absent, unrelated, and ambiguous questions. Page labels and expected facts are checked against the text extracted from the generated PDF by the test suite. The questions were written by the same author as the document and nothing was tuned on them, so the results are **exploratory**, not a held-out benchmark, and say little about real-world PDFs.
+
+**Measured results** (top 5 chunks retrieved; generation with `openai/gpt-oss-20b` on 2026-10-09, two runs):
+
+| Stage | Result |
+|---|---|
+| Retrieval, 18 answerable questions | Hit@1 0.83, Hit@3 0.94, Hit@5 0.94, MRR 0.89. One question (a paraphrase using "staff" where the text says "employed ... people") did not retrieve its page in the top 5. |
+| Answers | 16 of the 18 answerable questions were answered, and all 16 were correct on manual review. Of the other two, one abstained because the evidence was not retrieved, and one abstained although the evidence was retrieved. |
+| Citations | For all 16 answered questions the cited pages included a required page. A cited page is a reference to a passage the model was shown, not proof that the passage supports the claim. |
+| Abstention (positive = abstained) | 8 correct abstentions, 2 answerable questions refused, 1 unanswerable question answered, 16 correct answers. The decisions were identical across both runs. |
+
+The unanswerable question that was answered ("Which of the two terminals is better?") received a comparison that misstated one figure, which shows why a valid citation does not guarantee a supported claim. Each page of the test document is a single chunk, so the evaluation does not exercise chunk boundaries or pages split into several chunks.
+
 ## Limitations
 
 - No OCR: scanned or image-only PDFs are rejected. If only some pages lack text, the remaining pages are extracted and `pages_with_text` is lower than `page_count`.
 - Password-protected PDFs are rejected; supplying a password is not supported. PDFs that only restrict copying or printing open normally.
 - Extraction returns the text PyMuPDF produces. There is no layout analysis, so tables, multi-column pages, and headers or footers are not specially handled.
 - Chunks do not cross page boundaries. Facts split across a page break are retrieved only in part.
-- Retrieval quality has been checked only on a small synthetic document. The embedding model is a small English model; non-English documents are not evaluated.
+- Retrieval and answer quality have been measured only on a small synthetic document (see [Evaluation](#evaluation)). The embedding model is a small English model; non-English documents are not evaluated.
+- Retrieval matches meaning loosely: a paraphrase that shares no words with the passage can miss it.
 - Chunking parameters and `top_k` are initial defaults, not tuned values.
 - "Not enough evidence" is decided by the language model following the prompt, not by a retrieval-score threshold, because similarity scores are not calibrated probabilities. Prompt instructions reduce but do not eliminate unsupported answers or susceptibility to instructions hidden in a document, and the abstention behaviour has been checked on only a few questions.
 - Answers are only as good as retrieval: if the right passage is not among the top-k, the model cannot use it.
@@ -206,6 +235,7 @@ The live tests send small fictional test passages to Groq.
 - The index is in memory and belongs to the browser session: refreshing the page or starting over discards it and the PDF must be uploaded again. There is no persistence.
 - Only one document per session is supported. Uploads are subject to Streamlit's default 200 MB limit, and large PDFs take proportionally longer to index.
 - The embedding model is shared by all sessions of a server process. Concurrent multi-user use has not been load-tested.
+- Loading the embedding model needs free memory (the install is about 1 GB). On a 7 GB laptop with many applications open it failed intermittently with memory errors (a `MemoryError`, and Windows error 1455, "paging file is too small"). In a one-off local run on that machine, indexing 800 chunks (a 400-page PDF) took about 50 seconds; this is not a benchmark.
 
 ## Security and document handling
 
@@ -216,6 +246,7 @@ The live tests send small fictional test passages to Groq.
 - Error messages never contain the document's text, its location on disk, or credentials. Unexpected errors are written to the server log, not to the page.
 - Answers and passages are displayed as plain text, so markup produced by the model (for example a remote image link) is not rendered.
 - The run command above binds the app to `localhost` so it is not exposed on your network.
+- The app has no authentication or rate limiting: anyone who can reach a running instance can use the configured Groq key and send documents through it. Run it locally, or put it behind access control, before exposing it.
 - Answer generation sends the question and the retrieved passages to the Groq API. Do not use documents you are not permitted to share with that provider. Ingestion, indexing, and retrieval stay local.
 - The API key is read from the environment, is never logged, and is not included in error messages.
 

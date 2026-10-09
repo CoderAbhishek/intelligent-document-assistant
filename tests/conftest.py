@@ -109,3 +109,16 @@ def keyword_embed_model() -> KeywordEmbedding:
             "heron", "wren", "robot", "drone", "employed", "singapore", "people",
         ]
     )
+
+
+@pytest.fixture(scope="session")
+def corpus_embed_model() -> KeywordEmbedding:
+    """Stand-in embedding over the evaluation corpus, using only distinctive words.
+
+    Common words ("the", "of") are left out: in raw counts they would dominate the ranking.
+    """
+    from evaluation.corpus import PAGES
+
+    page_words = [set(re.findall(r"[a-z0-9]+", page.lower())) for page in PAGES]
+    vocabulary = sorted(w for w in set().union(*page_words) if sum(w in words for words in page_words) <= 4)
+    return KeywordEmbedding(vocabulary=vocabulary)

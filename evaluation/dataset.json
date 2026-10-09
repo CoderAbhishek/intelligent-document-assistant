@@ -1,0 +1,38 @@
+{
+  "description": "Labelled questions for the synthetic Meridian Harbor Logistics report (evaluation/corpus.py). Exploratory: written by the same author as the corpus and not used to tune the system. answer_criteria is a list of groups; an answer passes the rubric if every group has at least one alternative present (case-insensitive substring). relevant_pages are the 1-based pages that contain the answer; absent_terms are words that must not occur anywhere in the corpus.",
+  "items": [
+    {"id": "d1", "category": "direct", "question": "How many people did Meridian Harbor Logistics employ in 2024?", "answerable": true, "relevant_pages": [1], "answer_criteria": [["3,120", "3120"]], "expected_answer": "3,120 people"},
+    {"id": "d2", "category": "direct", "question": "In what year was the company founded?", "answerable": true, "relevant_pages": [2], "answer_criteria": [["1987"]], "expected_answer": "1987"},
+    {"id": "d3", "category": "direct", "question": "What was the group's net profit after tax in 2024?", "answerable": true, "relevant_pages": [6], "answer_criteria": [["63"]], "expected_answer": "63 million euros"},
+    {"id": "d4", "category": "direct", "question": "What is the quay length of the South Basin terminal?", "answerable": true, "relevant_pages": [5], "answer_criteria": [["980"]], "expected_answer": "980 metres"},
+    {"id": "d5", "category": "direct", "question": "Who is the chief financial officer?", "answerable": true, "relevant_pages": [3], "answer_criteria": [["Eklund"]], "expected_answer": "Lars Eklund"},
+    {"id": "d6", "category": "direct", "question": "What was the lost-time injury frequency rate in 2024?", "answerable": true, "relevant_pages": [8], "answer_criteria": [["1.9"]], "expected_answer": "1.9 per million hours worked"},
+
+    {"id": "p1", "category": "paraphrase", "question": "How many staff does the firm have?", "answerable": true, "relevant_pages": [1], "answer_criteria": [["3,120", "3120"]], "expected_answer": "3,120 people"},
+    {"id": "p2", "category": "paraphrase", "question": "When did the company first begin trading?", "answerable": true, "relevant_pages": [2], "answer_criteria": [["1987"]], "expected_answer": "1987"},
+    {"id": "p3", "category": "paraphrase", "question": "How much money did the firm make after taxes last year?", "answerable": true, "relevant_pages": [6], "answer_criteria": [["63"]], "expected_answer": "63 million euros net profit after tax"},
+    {"id": "p4", "category": "paraphrase", "question": "What is the largest ship size the newer terminal can receive?", "answerable": true, "relevant_pages": [5], "answer_criteria": [["18,000", "18000"]], "expected_answer": "ships of up to 18,000 TEU at South Basin"},
+    {"id": "p5", "category": "paraphrase", "question": "Who runs the company day to day?", "answerable": true, "relevant_pages": [3], "answer_criteria": [["Nandakumar"]], "expected_answer": "Priya Nandakumar, the chief executive officer"},
+    {"id": "p6", "category": "paraphrase", "question": "By how much did the company's borrowings fall during the year?", "answerable": true, "relevant_pages": [6], "answer_criteria": [["35", "305"]], "expected_answer": "net debt fell from 340 to 305 million euros (35 million)"},
+
+    {"id": "m1", "category": "multi_page", "question": "How many TEU were handled at North Quay and at South Basin in 2024?", "answerable": true, "relevant_pages": [4, 5], "answer_criteria": [["0.96", "960,000"], ["0.88", "880,000"]], "expected_answer": "0.96 million at North Quay and 0.88 million at South Basin"},
+    {"id": "m2", "category": "multi_page", "question": "What are the annual design capacities of the two terminals?", "answerable": true, "relevant_pages": [4, 5], "answer_criteria": [["1.1"], ["1.4"]], "expected_answer": "1.1 million TEU at North Quay and 1.4 million TEU at South Basin"},
+    {"id": "m3", "category": "multi_page", "question": "Who succeeded Anselm Rourke as chair, and in what year was the company he co-founded established?", "answerable": true, "relevant_pages": [2, 3], "answer_criteria": [["Oyelaran"], ["1987"]], "expected_answer": "Marguerite Oyelaran; the company was founded in 1987"},
+    {"id": "m4", "category": "multi_page", "question": "How does the share of containers leaving by rail compare between the two terminals?", "answerable": true, "relevant_pages": [4, 5], "answer_criteria": [["28"], ["9 per cent", "9%", "9 percent"]], "expected_answer": "about 28 per cent at North Quay versus about 9 per cent at South Basin"},
+
+    {"id": "n1", "category": "explicit_negative", "question": "What is the company's revenue guidance for 2025?", "answerable": true, "relevant_pages": [10], "answer_criteria": [["not publish", "no revenue guidance", "does not provide", "not give"]], "expected_answer": "The document says the company does not publish revenue guidance for 2025"},
+    {"id": "n2", "category": "explicit_negative", "question": "Does North Quay terminal offer shore power for ships?", "answerable": true, "relevant_pages": [9], "answer_criteria": [["not yet", "not currently", "not available", "does not", "no shore power", "isn't"]], "expected_answer": "Not yet; installation at North Quay is planned for 2026"},
+
+    {"id": "a1", "category": "absent", "question": "What is the name of the company's largest customer?", "answerable": false, "relevant_pages": [], "answer_criteria": [], "expected_answer": "Not stated in the document", "absent_terms": ["largest customer", "biggest customer"]},
+    {"id": "a2", "category": "absent", "question": "How much did the company spend on research and development in 2024?", "answerable": false, "relevant_pages": [], "answer_criteria": [], "expected_answer": "Not stated in the document", "absent_terms": ["research and development", "R&D"]},
+    {"id": "a3", "category": "absent", "question": "What was the company's share price at the end of 2024?", "answerable": false, "relevant_pages": [], "answer_criteria": [], "expected_answer": "Not stated in the document", "absent_terms": ["share price"]},
+    {"id": "a4", "category": "absent", "question": "How many ships called at South Basin in 2024?", "answerable": false, "relevant_pages": [], "answer_criteria": [], "expected_answer": "Not stated in the document (only TEU volumes are given)", "absent_terms": ["ships called", "vessel calls", "port calls"]},
+
+    {"id": "u1", "category": "unrelated", "question": "What is the capital of France?", "answerable": false, "relevant_pages": [], "answer_criteria": [], "expected_answer": "Unrelated to the document", "absent_terms": ["France", "Paris"]},
+    {"id": "u2", "category": "unrelated", "question": "How do I bake sourdough bread?", "answerable": false, "relevant_pages": [], "answer_criteria": [], "expected_answer": "Unrelated to the document", "absent_terms": ["sourdough", "bread"]},
+    {"id": "u3", "category": "unrelated", "question": "Who won the 2018 football World Cup?", "answerable": false, "relevant_pages": [], "answer_criteria": [], "expected_answer": "Unrelated to the document", "absent_terms": ["World Cup", "football"]},
+
+    {"id": "b1", "category": "ambiguous", "question": "Which of the two terminals is better?", "answerable": false, "relevant_pages": [], "answer_criteria": [], "expected_answer": "Subjective; the document gives facts for each terminal but no judgement", "absent_terms": ["better"]},
+    {"id": "b2", "category": "ambiguous", "question": "How many employees work at the terminal?", "answerable": false, "relevant_pages": [], "answer_criteria": [], "expected_answer": "Under-specified (which terminal?) and no per-terminal headcount is given; only the group total of 3,120 people", "absent_terms": ["employees"]}
+  ]
+}
