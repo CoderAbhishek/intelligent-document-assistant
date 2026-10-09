@@ -32,6 +32,8 @@ dist/
 # Local uploads and private documents
 data/uploads/
 data/private/
+# Test PDFs are generated in code; never commit real ones
+*.pdf
 
 # OS/editor noise
 .DS_Store

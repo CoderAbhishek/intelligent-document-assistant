@@ -1,13 +1,16 @@
 [project]
 name = "intelligent-document-assistant"
 version = "0.1.0"
-description = "Add your description here"
+description = "Document question-answering over a PDF using retrieval-augmented generation (work in progress)."
 readme = "README.md"
 authors = [
     { name = "Abhishek Vinod", email = "abhishekvinod48@gmail.com" }
 ]
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "llama-index-core>=0.14.25",
+    "pymupdf>=1.28.2",
+]
 
 [project.scripts]
 intelligent-document-assistant = "intelligent_document_assistant:main"
@@ -15,3 +18,8 @@ intelligent-document-assistant = "intelligent_document_assistant:main"
 [build-system]
 requires = ["uv_build>=0.12.18,<0.13.0"]
 build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]
