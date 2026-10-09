@@ -1,0 +1,39 @@
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Secrets and local environment
+.env
+.env.*
+!.env.example
+
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Coverage and build output
+.coverage
+htmlcov/
+build/
+dist/
+*.egg-info/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Streamlit local secrets
+.streamlit/secrets.toml
+
+# Local uploads and private documents
+data/uploads/
+data/private/
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+.vscode/
